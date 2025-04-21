@@ -1,0 +1,71 @@
+#include <stdio.h>
+#include <math.h>
+
+#define PI 3.14159265358979323846
+
+int main() {
+    double a = 1500;   // Semi-major axis
+    double b = 500;   // Semi-minor axis
+    double theta_deg, velocity, time_interval;
+
+    printf("Enter azimuthal angle θ (in degrees): ");
+    scanf("%lf", &theta_deg);
+
+    printf("Enter velocity (units per second): ");
+    scanf("%lf", &velocity);
+
+    printf("Enter time interval (seconds): ");
+    scanf("%lf", &time_interval);
+
+    double theta = theta_deg * PI / 180.0; // Convert to radians
+    double xc = 2500 * cos(theta);
+    double yc = 2500 * sin(theta);
+    double zc = 2000.0;
+
+    // Estimate surface distance of ellipse using discretized arc length
+    int samples = 10000;
+    double prev_x = xc + a * cos(0) * cos(theta);
+    double prev_y = yc + a * cos(0) * sin(theta);
+    double prev_z = zc + b * sin(0);
+    double surface_distance = 0.0;
+
+    for (int i = 1; i <= samples; ++i) {
+        double t = (2 * PI * i) / samples;
+        double x = xc + a * cos(t) * cos(theta);
+        double y = yc + a * cos(t) * sin(theta);
+        double z = zc + b * sin(t);
+
+        double dx = x - prev_x;
+        double dy = y - prev_y;
+        double dz = z - prev_z;
+        surface_distance += sqrt(dx*dx + dy*dy + dz*dz);
+
+        prev_x = x;
+        prev_y = y;
+        prev_z = z;
+    }
+
+    double total_time = surface_distance / velocity;
+    int steps = (int)(total_time / time_interval) + 1;
+
+    printf("\nEstimated Surface Distance: %.4lf units\n", surface_distance);
+    printf("Total Time: %.2lf seconds\n", total_time);
+    printf("\n%-10s %-10s %-10s %-17s %-10s\n", "X", "Y", "Z", "Elevation (deg)", "Time (s)");
+
+    for (int i = 0; i < steps; ++i) {
+        double time = i * time_interval;
+        double ratio = time / total_time;
+        double t = 2 * PI * ratio; // Full ellipse traversal
+
+        double x = xc + a * cos(t) * cos(theta);
+        double y = yc + a * cos(t) * sin(theta);
+        double z = zc + b * sin(t);
+
+        double elevation_rad = atan(z / sqrt(x * x + y * y));
+        double elevation_deg = elevation_rad * 180.0 / PI;
+
+        printf("%-10.4f %-10.4f %-10.4f %-17.6f %-10.2f\n", x, y, z, elevation_deg, time);
+    }
+
+    return 0;
+}
